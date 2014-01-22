@@ -1,5 +1,42 @@
 extends layout
 
 block content
+  script(type='text/javascript', src='/socket.io/socket.io.js')
+  script(type='text/javascript').
+    var socket = io.connect('http://localhost');
+
+    function hide(hand) {
+      console.log('hide(' + hand + ')');
+      socket.emit('hide', { hand: hand });
+    }
+
+    function seek(hand) {
+      console.log('seek(' + hand + ')');
+      socket.emit('seek', { hand: hand });
+    }
+
+    socket.on('onChosen', function(message, callback) {
+      document.getElementById('left').onclick = function() { seek('left'); };
+      document.getElementById('right').onclick = function() { seek('right'); };
+    });
+
+    socket.on('onResult', function(message, callback) {
+      if (message.result) {
+        window.alert('You chose correctly! Well done!');
+      }
+      else {
+        window.alert('You chose wrongly! Try again!');
+      }
+    });
+
+    window.onload = function() {
+      document.getElementById('left').onclick = function() { hide('left'); };
+      document.getElementById('right').onclick = function() { hide('right'); };
+    }
+
   h1= title
   p Welcome to #{title}
+  button(id='left').
+    Left
+  button(id='right').
+    Right

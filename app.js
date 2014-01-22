@@ -8,6 +8,7 @@ var routes = require('./routes');
 var user = require('./routes/user');
 var http = require('http');
 var path = require('path');
+var io = require('socket.io');
 
 var app = express();
 
@@ -31,6 +32,44 @@ if ('development' == app.get('env')) {
 app.get('/', routes.index);
 app.get('/users', user.list);
 
-http.createServer(app).listen(app.get('port'), function(){
+var server = http.createServer(app);
+
+var hand = null;
+
+var foo = io.listen(server);
+foo.sockets.on('connection', function (socket) {
+
+  if (hand != null) {
+    foo.sockets.emit('onChosen');
+  }
+
+  socket.on('hide', function(message, callback) {
+    console.log('hide message was received, hand = ' + message.hand);
+
+    if (hand == null) {
+      hand = message.hand;
+      foo.sockets.emit('onChosen');
+    }
+    else {
+      console.log('hand has already been chosen');
+    }
+  });
+
+  socket.on('seek', function(message, callback) {
+    console.log('seek message was received, hand = ' + message.hand);
+
+    if (hand == message.hand) {
+      console.log('correct hand was chosen');
+      socket.emit('onResult', { result: true });
+    }
+    else {
+      console.log('wrong hand was chosen');
+      socket.emit('onResult', { result: false });
+    }
+  });
+
+});;
+
+server.listen(app.get('port'), function(){
   console.log('Express server listening on port ' + app.get('port'));
 });
